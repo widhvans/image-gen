@@ -1,4 +1,3 @@
-
 import requests
 import random
 import string
@@ -10,14 +9,15 @@ def enhance_prompt(prompt, orientation="wide"):
     prompt_lower = prompt.lower()
     is_adult = any(keyword in prompt_lower for keyword in ADULT_KEYWORDS)
     
-    # Quality keywords for clarity
-    quality_keywords = "ultra HD, hyper-realistic, highly detailed, full body, no cropping, perfect anatomy, sharp focus, vivid colors"
+    # Common quality keywords for exceptional clarity and professionalism
+    quality_keywords = "with perfect anatomy, sharp focus, vivid colors, and studio lighting, photographed with a professional DSLR camera, 50mm lens, f/1.8 aperture, in ultra HD quality"
     
     if is_adult:
-        # Extreme nudity and explicitness
-        enhanced_prompt = f"{prompt}, completely nude, explicit adult content, uncensored, extreme erotic, visible pussy, clear detailed boobs, sexually provocative, no restrictions, {quality_keywords}"
+        # Explicit keywords for optimized NSFW content
+        adult_keywords = "completely nude with visible pussy and clear detailed boobs, uncensored, no pixelation, no censorship bars, in a sexually provocative pose"
+        enhanced_prompt = f"A highly detailed, hyper-realistic, award-winning photograph of {prompt}, {adult_keywords}, {quality_keywords}"
     else:
-        enhanced_prompt = f"{prompt}, {quality_keywords}"
+        enhanced_prompt = f"A highly detailed, hyper-realistic, award-winning photograph of {prompt}, {quality_keywords}"
     
     return enhanced_prompt
 
