@@ -5,10 +5,8 @@ from main import generate_image
 from io import BytesIO
 import asyncio
 
-# User data storage
 user_data = {}
 
-# Telegram Bot Setup
 app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 @app.on_message(filters.command("start"))
@@ -18,10 +16,9 @@ async def start(client, message):
 @app.on_message(filters.text)
 async def handle_message(client, message):
     text = message.text
-    if not text.startswith('/'):  # Fix for ~filters.command error
+    if not text.startswith('/'):
         user_data[message.from_user.id] = {"prompt": text}
         
-        # Orientation selection buttons
         buttons = [
             [InlineKeyboardButton("Portrait", callback_data="portrait")],
             [InlineKeyboardButton("Landscape", callback_data="landscape")]
@@ -41,7 +38,6 @@ async def handle_orientation(client, callback_query):
     
     user_data[user_id]["orientation"] = "tall" if orientation == "portrait" else "wide"
     
-    # Image count selection buttons
     buttons = [
         [InlineKeyboardButton("1", callback_data="count_1"),
          InlineKeyboardButton("2", callback_data="count_2")],
@@ -78,12 +74,10 @@ async def handle_count(client, callback_query):
                 photo=bio,
                 caption=f"Image {i} of {count}"
             )
-            # Auto-delete after 10 minutes (600 seconds)
             asyncio.create_task(auto_delete_message(msg, 600))
     else:
         await callback_query.message.edit_text("Sorry, images generate nahi kar paya.")
     
-    # Clear user data
     user_data.pop(user_id, None)
     await callback_query.answer()
 
