@@ -15,11 +15,10 @@ app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 async def start(client, message):
     await message.reply_text("Hello! Mujhe ek text bhejo, aur main uske basis par images generate karunga.")
 
-@app.on_message(filters.text)  # Removed ~filters.command
+@app.on_message(filters.text)
 async def handle_message(client, message):
     text = message.text
-    # Check if it's not a command
-    if not text.startswith('/'):
+    if not text.startswith('/'):  # Fix for ~filters.command error
         user_data[message.from_user.id] = {"prompt": text}
         
         # Orientation selection buttons
