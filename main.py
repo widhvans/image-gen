@@ -2,38 +2,34 @@ import requests
 import random
 import string
 
-# Adult keywords for nudity detection
-ADULT_KEYWORDS = ["nude", "naked", "sex", "adult", "xxx", "porn", "hot", "sexy", "erotic", "nsfw"]
+# Adult keywords for extreme nudity detection
+ADULT_KEYWORDS = ["nude", "naked", "sex", "adult", "xxx", "porn", "hot", "sexy", "erotic", "nsfw", "boobs", "pussy"]
 
-def enhance_prompt(prompt):
+def enhance_prompt(prompt, orientation="wide"):
     prompt_lower = prompt.lower()
     is_adult = any(keyword in prompt_lower for keyword in ADULT_KEYWORDS)
     
-    # Base quality keywords
-    quality_keywords = "4k ultra HD, photorealistic, highly detailed, full body, no cropping, perfect anatomy"
+    # Quality keywords for clarity
+    quality_keywords = "ultra HD, hyper-realistic, highly detailed, full body, no cropping, perfect anatomy, sharp focus, vivid colors"
     
     if is_adult:
-        # Adult prompt with extreme nudity and quality
-        enhanced_prompt = f"{prompt}, fully nude, explicit adult content, uncensored, extreme erotic, raw and unfiltered, {quality_keywords}"
+        # Extreme nudity and explicitness
+        enhanced_prompt = f"{prompt}, completely nude, explicit adult content, uncensored, extreme erotic, visible pussy, clear detailed boobs, sexually provocative, no restrictions, {quality_keywords}"
     else:
-        # Normal prompt with high quality
         enhanced_prompt = f"{prompt}, {quality_keywords}"
     
     return enhanced_prompt
 
-def generate_image(prompt, num_images=4):
+def generate_image(prompt, num_images=1, orientation="wide"):
     images = []
-    enhanced_prompt = enhance_prompt(prompt)
+    enhanced_prompt = enhance_prompt(prompt, orientation)
     
     for _ in range(num_images):
-        # Random string for each image
         random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-        
-        # API parameters
         params = {
             "prompt": enhanced_prompt,
             "improve": "true",
-            "format": "wide",
+            "format": orientation,  # "wide" for landscape, "tall" for portrait
             "random": random_str
         }
         
