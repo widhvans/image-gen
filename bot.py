@@ -58,10 +58,20 @@ def generate_logo(prompt, num_logos=1):
     logos = []
     for _ in range(num_logos):
         try:
+            # Step 1: Call the logo API to get the JSON response
             url = f"https://logo.itz-ashlynn.workers.dev/?prompt={prompt}"
             response = requests.get(url, timeout=10)
             if response.status_code == 200:
-                logos.append(response.content)
+                json_data = response.json()
+                if json_data.get("success") and "image_url" in json_data:
+                    # Step 2: Fetch the actual image from the image_url
+                    image_response = requests.get(json_data["image_url"], timeout=10)
+                    if image_response.status_code == 200:
+                        logos.append(image_response.content)
+                    else:
+                        logger.error(f"Logo Image Fetch Error: Status code {image_response.status_code}")
+                else:
+                    logger.error(f"Logo API Response Error: {json_data.get('msg', 'Unknown error')}")
             else:
                 logger.error(f"Logo API Error: Status code {response.status_code}")
         except requests.RequestException as e:
@@ -176,7 +186,6 @@ async def handle_count(client, callback_query):
                     caption=f"{file_type.capitalize()} {i} of {count}"
                 )
                 asyncio.create_task(auto_delete_message(msg, 600))
-            # Only answer once after successful generation
             await callback_query.answer(f"{count} {file_type}s generated!")
         else:
             await callback_query.message.edit_text(f"Sorry, {file_type}s generate nahi kar paya.")
