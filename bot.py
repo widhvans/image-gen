@@ -1,4 +1,3 @@
-
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import API_ID, API_HASH, BOT_TOKEN
@@ -8,6 +7,7 @@ import logging
 import requests
 import random
 import string
+from pyrogram.errors import QueryIdInvalid
 
 # Setup logging to debug errors
 logging.basicConfig(level=logging.INFO)
@@ -19,14 +19,13 @@ user_data = {}
 # Telegram Bot Setup
 app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Adult keywords for extreme nudity detection (removed from prompt enhancement)
+# Adult keywords (kept but not used in prompt enhancement)
 ADULT_KEYWORDS = ["nude", "naked", "sex", "adult", "xxx", "porn", "hot", "sexy", "erotic", "nsfw", "boobs", "pussy"]
 
 # Current mode (default: image generation)
 CURRENT_MODE = {"mode": "image"}  # Can be "image" or "logo"
 
 def enhance_prompt(prompt, orientation="wide"):
-    # Common quality keywords for exceptional clarity and professionalism
     quality_keywords = "with perfect anatomy, sharp focus, vivid colors, and studio lighting, photographed with a professional DSLR camera, 50mm lens, f/1.8 aperture, in ultra HD quality"
     enhanced_prompt = f"A highly detailed, hyper-realistic, award-winning photograph of {prompt}, {quality_keywords}"
     return enhanced_prompt
@@ -40,7 +39,7 @@ def generate_image(prompt, num_images=1, orientation="wide"):
         params = {
             "prompt": enhanced_prompt,
             "improve": "true",
-            "format": orientation,  # "wide" for landscape, "tall" for portrait
+            "format": orientation,
             "random": random_str
         }
         
@@ -177,16 +176,24 @@ async def handle_count(client, callback_query):
                     caption=f"{file_type.capitalize()} {i} of {count}"
                 )
                 asyncio.create_task(auto_delete_message(msg, 600))
+            # Only answer once after successful generation
+            await callback_query.answer(f"{count} {file_type}s generated!")
         else:
             await callback_query.message.edit_text(f"Sorry, {file_type}s generate nahi kar paya.")
+            await callback_query.answer(f"Failed to generate {file_type}s!", cache_time=5)
         
         # Clear user data
         user_data.pop(user_id, None)
-        await callback_query.answer()
+    except QueryIdInvalid:
+        logger.warning("Query ID invalid, likely expired. Skipping answer.")
+        await callback_query.message.edit_text("Callback expired, please try again!")
     except Exception as e:
         logger.error(f"Error in handle_count: {e}")
-        await callback_query.message.edit_text("Kuch galat ho gaya, dobara try karo!")
-        await callback_query.answer("Error ho gaya!", cache_time=5)
+        try:
+            await callback_query.message.edit_text("Kuch galat ho gaya, dobara try karo!")
+            await callback_query.answer("Error ho gaya!", cache_time=5)
+        except QueryIdInvalid:
+            logger.warning("Query ID invalid in error handling, skipping answer.")
 
 async def auto_delete_message(message, delay):
     try:
