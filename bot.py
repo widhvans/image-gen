@@ -25,15 +25,9 @@ ADULT_KEYWORDS = ["nude", "naked", "sex", "adult", "xxx", "porn", "hot", "sexy",
 # Current mode (default: image generation)
 CURRENT_MODE = {"mode": "image"}  # Can be "image" or "logo"
 
-def enhance_prompt(prompt, orientation="wide", is_logo=False):
-    if is_logo:
-        # High-quality logo-specific enhancement
-        quality_keywords = "ultra-high resolution, 4K quality, sharp text rendering, crisp edges, vibrant colors, professional studio lighting, modern minimalist design, perfect text clarity, photographed with a professional DSLR camera, 50mm lens, f/1.8 aperture"
-        enhanced_prompt = f"A highly detailed, hyper-realistic logo of {prompt}, {quality_keywords}"
-    else:
-        # General image enhancement
-        quality_keywords = "with perfect anatomy, sharp focus, vivid colors, and studio lighting, photographed with a professional DSLR camera, 50mm lens, f/1.8 aperture, in ultra HD quality"
-        enhanced_prompt = f"A highly detailed, hyper-realistic photograph of {prompt}, {quality_keywords}"
+def enhance_prompt(prompt, orientation="wide"):
+    quality_keywords = "with perfect anatomy, sharp focus, vivid colors, and studio lighting, photographed with a professional DSLR camera, 50mm lens, f/1.8 aperture, in ultra HD quality"
+    enhanced_prompt = f"A highly detailed, hyper-realistic, award-winning photograph of {prompt}, {quality_keywords}"
     return enhanced_prompt
 
 def generate_image(prompt, num_images=1, orientation="wide"):
