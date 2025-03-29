@@ -1,4 +1,3 @@
-
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import API_ID, API_HASH, BOT_TOKEN
@@ -26,15 +25,20 @@ ADULT_KEYWORDS = ["nude", "naked", "sex", "adult", "xxx", "porn", "hot", "sexy",
 # Current mode (default: image generation)
 CURRENT_MODE = {"mode": "image"}  # Can be "image" or "logo"
 
-def enhance_prompt(prompt, orientation="wide"):
-    quality_keywords = "with perfect anatomy, sharp focus, vivid colors, and studio lighting, photographed with a professional DSLR camera, 50mm lens, f/1.8 aperture, in ultra HD quality"
-    enhanced_prompt = f"A highly detailed, hyper-realistic, award-winning photograph of {prompt}, {quality_keywords}"
+def enhance_prompt(prompt, orientation="wide", is_logo=False):
+    if is_logo:
+        # High-quality logo-specific enhancement
+        quality_keywords = "ultra-high resolution, 4K quality, sharp text rendering, crisp edges, vibrant colors, professional studio lighting, modern minimalist design, perfect text clarity, photographed with a professional DSLR camera, 50mm lens, f/1.8 aperture"
+        enhanced_prompt = f"A highly detailed, hyper-realistic logo of {prompt}, {quality_keywords}"
+    else:
+        # General image enhancement
+        quality_keywords = "with perfect anatomy, sharp focus, vivid colors, and studio lighting, photographed with a professional DSLR camera, 50mm lens, f/1.8 aperture, in ultra HD quality"
+        enhanced_prompt = f"A highly detailed, hyper-realistic photograph of {prompt}, {quality_keywords}"
     return enhanced_prompt
 
 def generate_image(prompt, num_images=1, orientation="wide"):
     images = []
-    enhanced_prompt = enhance_prompt(prompt, orientation)
-    
+    enhanced_prompt = enhance_prompt(prompt, orientation, is_logo=True)  # Set is_logo=True for high-quality logos
     for _ in range(num_images):
         random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
         params = {
@@ -57,15 +61,15 @@ def generate_image(prompt, num_images=1, orientation="wide"):
 
 def generate_logo(prompt, num_logos=1):
     logos = []
+    # Optimize prompt for logo API to ensure text is rendered
+    optimized_prompt = f"Design a modern and professional logo with clear, sharp text '{prompt}' prominently displayed, using a sleek minimalist style and sophisticated color palette"
     for _ in range(num_logos):
         try:
-            # Step 1: Call the logo API to get the JSON response
-            url = f"https://logo.itz-ashlynn.workers.dev/?prompt={prompt}"
+            url = f"https://logo.itz-ashlynn.workers.dev/?prompt={optimized_prompt}"
             response = requests.get(url, timeout=10)
             if response.status_code == 200:
                 json_data = response.json()
                 if json_data.get("success") and "image_url" in json_data:
-                    # Step 2: Fetch the actual image from the image_url
                     image_response = requests.get(json_data["image_url"], timeout=10)
                     if image_response.status_code == 200:
                         logos.append(image_response.content)
@@ -83,22 +87,34 @@ def generate_logo(prompt, num_logos=1):
 @app.on_message(filters.command("start"))
 async def start(client, message):
     try:
-        await message.reply_text("Hello! Mujhe ek text bhejo, aur main uske basis par images ya logos generate karunga.\nUse /set to change mode (image/logo).")
+        await message.reply_text("Hello! Mujhe ek text bhejo, aur main uske basis par images ya logos generate karunga.\nUse /set to change mode.")
     except Exception as e:
         logger.error(f"Error in start: {e}")
 
 @app.on_message(filters.command("set"))
 async def set_mode(client, message):
     try:
-        args = message.text.split()
-        if len(args) != 2 or args[1] not in ["image", "logo"]:
-            await message.reply_text("Usage: /set [image|logo]")
-            return
-        mode = args[1]
-        CURRENT_MODE["mode"] = mode
-        await message.reply_text(f"Mode set to: {mode}")
+        buttons = [
+            [InlineKeyboardButton("Images", callback_data="set_image")],
+            [InlineKeyboardButton("Logo", callback_data="set_logo")]
+        ]
+        await message.reply_text(
+            "Mode select karo:",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
     except Exception as e:
         logger.error(f"Error in set_mode: {e}")
+
+@app.on_callback_query(filters.regex(r"^set_(image|logo)$"))
+async def handle_set_mode(client, callback_query):
+    mode = callback_query.data.split("_")[1]
+    try:
+        CURRENT_MODE["mode"] = mode
+        await callback_query.message.edit_text(f"Mode set to: {mode}")
+        await callback_query.answer()
+    except Exception as e:
+        logger.error(f"Error in handle_set_mode: {e}")
+        await callback_query.answer("Kuch galat ho gaya!", cache_time=5)
 
 @app.on_message(filters.text & ~filters.command(["start", "set"]))
 async def handle_message(client, message):
