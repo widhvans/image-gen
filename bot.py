@@ -32,7 +32,8 @@ def enhance_prompt(prompt, orientation="wide"):
 
 def generate_image(prompt, num_images=1, orientation="wide"):
     images = []
-    enhanced_prompt = enhance_prompt(prompt, orientation, is_logo=True)  # Set is_logo=True for high-quality logos
+    enhanced_prompt = enhance_prompt(prompt, orientation)
+    
     for _ in range(num_images):
         random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
         params = {
