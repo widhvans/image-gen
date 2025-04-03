@@ -1,4 +1,3 @@
-
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import API_ID, API_HASH, BOT_TOKEN
@@ -33,7 +32,7 @@ def enhance_prompt(prompt, orientation="wide"):
 
 def generate_image(prompt, num_images=1, orientation="wide"):
     images = []
-    enhanced_prompt = enhance_prompt(prompt, orientation)  # Set is_logo=True for high-quality logos
+    enhanced_prompt = enhance_prompt(prompt, orientation)
     for _ in range(num_images):
         random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
         params = {
@@ -54,14 +53,12 @@ def generate_image(prompt, num_images=1, orientation="wide"):
     
     return images if images else None
 
-def generate_logo(prompt, num_logos=1):
+def generate_logo_v2(prompt, num_logos=1):
     logos = []
-    # Optimize prompt for logo API to ensure text is rendered
-    optimized_prompt = f"Design a modern and professional logo with clear, sharp text '{prompt}' prominently displayed, using a sleek minimalist style and sophisticated color palette"
     for _ in range(num_logos):
         try:
-            url = f"https://logo.itz-ashlynn.workers.dev/?prompt={optimized_prompt}"
-            response = requests.get(url, timeout=10)
+            url = f"https://your-logo-v2-api.workers.dev/?prompt={prompt}"  # Replace with your deployed Logo V2 API URL
+            response = requests.get(url, timeout=15)
             if response.status_code == 200:
                 json_data = response.json()
                 if json_data.get("success") and "image_url" in json_data:
@@ -69,13 +66,13 @@ def generate_logo(prompt, num_logos=1):
                     if image_response.status_code == 200:
                         logos.append(image_response.content)
                     else:
-                        logger.error(f"Logo Image Fetch Error: Status code {image_response.status_code}")
+                        logger.error(f"Logo V2 Image Fetch Error: Status code {image_response.status_code}")
                 else:
-                    logger.error(f"Logo API Response Error: {json_data.get('msg', 'Unknown error')}")
+                    logger.error(f"Logo V2 API Response Error: {json_data.get('msg', 'Unknown error')}")
             else:
-                logger.error(f"Logo API Error: Status code {response.status_code}")
+                logger.error(f"Logo V2 API Error: Status code {response.status_code}")
         except requests.RequestException as e:
-            logger.error(f"Logo API Error: {e}")
+            logger.error(f"Logo V2 API Error: {e}")
     
     return logos if logos else None
 
@@ -186,7 +183,7 @@ async def handle_count(client, callback_query):
             file_type = "image"
         else:  # logo mode
             await callback_query.message.edit_text(f"{count} logos generate kar raha hoon, thodi der wait karo...")
-            result = generate_logo(prompt, num_logos=count)
+            result = generate_logo_v2(prompt, num_logos=count)
             file_type = "logo"
         
         if result:
