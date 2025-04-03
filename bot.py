@@ -23,7 +23,7 @@ app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 ADULT_KEYWORDS = ["nude", "naked", "sex", "adult", "xxx", "porn", "hot", "sexy", "erotic", "nsfw", "boobs", "pussy"]
 
 # Current mode (default: image generation)
-CURRENT_MODE = {"mode": "image"}  # Can be "image" or "logo"
+CURRENT_MODE = {"mode": "image"}  # Can be "image", "logo_v1", or "logo_v2"
 
 def enhance_prompt(prompt, orientation="wide"):
     quality_keywords = "with perfect anatomy, sharp focus, vivid colors, and studio lighting, photographed with a professional DSLR camera, 50mm lens, f/1.8 aperture, in ultra HD quality"
@@ -52,6 +52,30 @@ def generate_image(prompt, num_images=1, orientation="wide"):
             logger.error(f"Image API Error: {e}")
     
     return images if images else None
+
+def generate_logo(prompt, num_logos=1):
+    logos = []
+    optimized_prompt = f"Design a modern and professional logo with clear, sharp text '{prompt}' prominently displayed, using a sleek minimalist style and sophisticated color palette"
+    for _ in range(num_logos):
+        try:
+            url = f"https://logo.itz-ashlynn.workers.dev/?prompt={optimized_prompt}"
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                json_data = response.json()
+                if json_data.get("success") and "image_url" in json_data:
+                    image_response = requests.get(json_data["image_url"], timeout=10)
+                    if image_response.status_code == 200:
+                        logos.append(image_response.content)
+                    else:
+                        logger.error(f"Logo V1 Image Fetch Error: Status code {image_response.status_code}")
+                else:
+                    logger.error(f"Logo V1 API Response Error: {json_data.get('msg', 'Unknown error')}")
+            else:
+                logger.error(f"Logo V1 API Error: Status code {response.status_code}")
+        except requests.RequestException as e:
+            logger.error(f"Logo V1 API Error: {e}")
+    
+    return logos if logos else None
 
 def generate_logo_v2(prompt, num_logos=1):
     logos = []
@@ -88,7 +112,8 @@ async def set_mode(client, message):
     try:
         buttons = [
             [InlineKeyboardButton("Images", callback_data="set_image")],
-            [InlineKeyboardButton("Logo", callback_data="set_logo")]
+            [InlineKeyboardButton("Logo V1", callback_data="set_logo_v1")],
+            [InlineKeyboardButton("Logo V2", callback_data="set_logo_v2")]
         ]
         await message.reply_text(
             "Mode select karo:",
@@ -97,12 +122,12 @@ async def set_mode(client, message):
     except Exception as e:
         logger.error(f"Error in set_mode: {e}")
 
-@app.on_callback_query(filters.regex(r"^set_(image|logo)$"))
+@app.on_callback_query(filters.regex(r"^set_(image|logo_v1|logo_v2)$"))
 async def handle_set_mode(client, callback_query):
-    mode = callback_query.data.split("_")[1]
+    mode = callback_query.data.split("_")[1] if callback_query.data == "set_image" else "_".join(callback_query.data.split("_")[1:])
     try:
         CURRENT_MODE["mode"] = mode
-        await callback_query.message.edit_text(f"Mode set to: {mode}")
+        await callback_query.message.edit_text(f"Mode set to: {mode.replace('_', ' ').title()}")
         await callback_query.answer()
     except Exception as e:
         logger.error(f"Error in handle_set_mode: {e}")
@@ -123,7 +148,7 @@ async def handle_message(client, message):
                 "Image orientation select karo:",
                 reply_markup=InlineKeyboardMarkup(buttons)
             )
-        elif CURRENT_MODE["mode"] == "logo":
+        elif CURRENT_MODE["mode"] in ["logo_v1", "logo_v2"]:
             buttons = [
                 [InlineKeyboardButton("1", callback_data="count_1"),
                  InlineKeyboardButton("2", callback_data="count_2")],
@@ -181,8 +206,12 @@ async def handle_count(client, callback_query):
             await callback_query.message.edit_text(f"{count} images generate kar raha hoon, thodi der wait karo...")
             result = generate_image(prompt, num_images=count, orientation=orientation)
             file_type = "image"
-        else:  # logo mode
-            await callback_query.message.edit_text(f"{count} logos generate kar raha hoon, thodi der wait karo...")
+        elif CURRENT_MODE["mode"] == "logo_v1":
+            await callback_query.message.edit_text(f"{count} logos (V1) generate kar raha hoon, thodi der wait karo...")
+            result = generate_logo(prompt, num_logos=count)
+            file_type = "logo"
+        elif CURRENT_MODE["mode"] == "logo_v2":
+            await callback_query.message.edit_text(f"{count} logos (V2) generate kar raha hoon, thodi der wait karo...")
             result = generate_logo_v2(prompt, num_logos=count)
             file_type = "logo"
         
